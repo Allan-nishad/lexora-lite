@@ -14,6 +14,8 @@ import {
   Users,
   Tag,
   Sparkles,
+  FileCheck2,
+  AlertTriangle,
 } from "lucide-react";
 
 interface ClauseCardProps {
@@ -67,13 +69,46 @@ export function ClauseCard({ clause, index }: ClauseCardProps) {
     }
   };
 
+  const getEvidenceBadge = (status?: string, isVerified?: boolean) => {
+    if (isVerified || status === "verified") {
+      return {
+        label: "Verified in Source Text",
+        container: "bg-emerald-50 text-emerald-800 border-emerald-300",
+        icon: FileCheck2,
+      };
+    }
+    if (status === "model_quoted") {
+      return {
+        label: "Model Supporting Reference",
+        container: "bg-amber-50 text-amber-800 border-amber-300",
+        icon: HelpCircle,
+      };
+    }
+    if (status === "unverified") {
+      return {
+        label: "Unverified in Text • Review Needed",
+        container: "bg-rose-50 text-rose-800 border-rose-300",
+        icon: AlertTriangle,
+      };
+    }
+    return {
+      label: "Evidence Unavailable",
+      container: "bg-slate-100 text-slate-600 border-slate-300",
+      icon: Info,
+    };
+  };
+
   const badge = getBadgeStyle(clause.riskLevel);
   const BadgeIcon = badge.icon;
+  const evidenceBadge = getEvidenceBadge(clause.evidenceStatus, clause.isVerified);
+  const EvidenceBadgeIcon = evidenceBadge.icon;
+
   const hasValidEvidence =
     clause.evidence &&
     clause.evidence.trim() !== "" &&
     clause.evidence !== "No explicit clause text quoted." &&
-    clause.evidence !== "No direct quote available.";
+    clause.evidence !== "No direct quote available." &&
+    clause.evidence !== "Evidence unavailable in original document.";
 
   return (
     <article
@@ -113,30 +148,38 @@ export function ClauseCard({ clause, index }: ClauseCardProps) {
         </div>
       </div>
 
-      {/* Parties Involved */}
-      {clause.parties && clause.parties.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap text-xs text-slate-500">
-          <Users className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" aria-hidden="true" />
-          <span className="font-bold text-slate-700 text-[11px] uppercase tracking-wider">
-            Binding Parties:
-          </span>
-          {clause.parties.map((party, pIdx) => (
-            <span
-              key={pIdx}
-              className="bg-blue-50 text-blue-800 border border-blue-200/90 font-bold px-2.5 py-0.5 rounded-lg text-xs"
-            >
-              {party}
+      {/* Parties Involved & Supplied Document Indicator */}
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+        {clause.parties && clause.parties.length > 0 ? (
+          <div className="flex items-center gap-2 flex-wrap text-slate-500">
+            <Users className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" aria-hidden="true" />
+            <span className="font-bold text-slate-700 text-[11px] uppercase tracking-wider">
+              Binding Parties:
             </span>
-          ))}
-        </div>
-      )}
+            {clause.parties.map((party, pIdx) => (
+              <span
+                key={pIdx}
+                className="bg-blue-50 text-blue-800 border border-blue-200/90 font-bold px-2.5 py-0.5 rounded-lg text-xs"
+              >
+                {party}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <div />
+        )}
 
-      {/* Plain Language Explanation */}
+        <span className="text-[10px] font-semibold text-slate-600 bg-slate-100/80 border border-slate-200 px-2 py-0.5 rounded-md">
+          Based on supplied document
+        </span>
+      </div>
+
+      {/* 1. AI Plain Language Explanation Section */}
       <div className="text-slate-800 text-sm sm:text-base leading-relaxed bg-slate-50/80 p-4 rounded-xl border border-slate-200/70 relative">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-900 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-blue-600" aria-hidden="true" />
-            Plain-Language Meaning
+            AI Plain-Language Explanation
           </span>
           <button
             type="button"
@@ -152,7 +195,7 @@ export function ClauseCard({ clause, index }: ClauseCardProps) {
             ) : (
               <>
                 <Copy className="w-3 h-3" aria-hidden="true" />
-                <span>Copy meaning</span>
+                <span>Copy explanation</span>
               </>
             )}
           </button>
@@ -160,7 +203,7 @@ export function ClauseCard({ clause, index }: ClauseCardProps) {
         <p className="font-medium text-slate-800">{clause.explanation}</p>
       </div>
 
-      {/* Supporting Verbatim Evidence from Document */}
+      {/* 2. Original Document Evidence Section (Separated Visually) */}
       {hasValidEvidence ? (
         <div className="border border-indigo-100 bg-gradient-to-br from-indigo-50/50 via-slate-50 to-white rounded-xl overflow-hidden shadow-2xs">
           <button
@@ -174,14 +217,17 @@ export function ClauseCard({ clause, index }: ClauseCardProps) {
               <Quote className="w-3.5 h-3.5 text-indigo-600" aria-hidden="true" />
               <span>Original Document Verbatim Evidence</span>
             </div>
-            <div className="flex items-center gap-1 text-slate-400 font-normal">
-              <span className="text-[11px]">
-                {isEvidenceExpanded ? "Hide quote" : "Show quote"}
+            <div className="flex items-center gap-2">
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${evidenceBadge.container}`}
+              >
+                <EvidenceBadgeIcon className="w-3 h-3" aria-hidden="true" />
+                <span>{evidenceBadge.label}</span>
               </span>
               {isEvidenceExpanded ? (
-                <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" />
+                <ChevronUp className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
               ) : (
-                <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
               )}
             </div>
           </button>
@@ -198,11 +244,11 @@ export function ClauseCard({ clause, index }: ClauseCardProps) {
               <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
                 {clause.confidenceNote ? (
                   <span className="text-slate-500 italic">
-                    Grounding: {clause.confidenceNote}
+                    Note: {clause.confidenceNote}
                   </span>
                 ) : (
                   <span className="text-emerald-700 font-medium flex items-center gap-1">
-                    <Check className="w-3 h-3" aria-hidden="true" /> Exact quote matched in text
+                    <Check className="w-3 h-3" aria-hidden="true" /> Grounded in provided document
                   </span>
                 )}
                 <button
@@ -228,8 +274,14 @@ export function ClauseCard({ clause, index }: ClauseCardProps) {
           )}
         </div>
       ) : (
-        <div className="text-[11px] text-slate-400 italic px-2">
-          No direct verbatim quote declared for this general entry.
+        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+            <span className="font-semibold">Evidence unavailable in original document</span>
+          </div>
+          <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+            Flagged for Review
+          </span>
         </div>
       )}
     </article>
