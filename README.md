@@ -9,27 +9,30 @@
 [![Status](https://img.shields.io/badge/PromptWars-MVP_Submission-emerald?style=for-the-badge)](https://promptwars.dev)
 
 > **Solo Submission** for the **PromptWars Virtual Exclusive Edition**  
-> **Challenge:** *AI for Legal Assistance & Access*
+> **Challenge:** *AI for Legal Assistance & Access*  
+> **Repository:** [https://github.com/Allan-nishad/lexora-lite](https://github.com/Allan-nishad/lexora-lite)
 
 ---
 
 ## 📑 Table of Contents
 1. [Overview & Problem Statement](#-1-overview--problem-statement)
 2. [Core Capabilities & Feature Matrix](#-2-core-capabilities--feature-matrix)
-3. [GenAI Architecture & Data Flow](#-3-genai-architecture--data-flow)
-4. [Prompt Engineering & Safety Directives](#-4-prompt-engineering--safety-directives)
-5. [Quick Start & Local Installation](#-5-quick-start--local-installation)
-6. [Interactive Demo & Test Scenarios](#-6-interactive-demo--test-scenarios)
-7. [Automated Testing & Validation](#-7-automated-testing--validation)
-8. [Legal Safety, Privacy & Scope Boundaries](#-8-legal-safety-privacy--scope-boundaries)
+3. [Deterministic Evidence Verification Engine](#-3-deterministic-evidence-verification-engine)
+4. [GenAI Architecture & Data Flow](#-4-genai-architecture--data-flow)
+5. [Prompt Engineering & Safety Directives](#-5-prompt-engineering--safety-directives)
+6. [Quick Start & Local Installation](#-6-quick-start--local-installation)
+7. [Interactive Demo & Test Scenarios](#-7-interactive-demo--test-scenarios)
+8. [Automated Testing & Quality Suite](#-8-automated-testing--quality-suite)
+9. [Accessibility & WCAG 2.1 Conformance](#-9-accessibility--wcag-21-conformance)
+10. [Legal Safety, Privacy & Scope Boundaries](#-10-legal-safety-privacy--scope-boundaries)
 
 ---
 
 ## 🎯 1. Overview & Problem Statement
 
-Every day, freelancers, small business owners, and consumers sign agreements filled with archaic legalese, ambiguous terms, strict deadlines, and one-sided liabilities. Professional legal review is often costly and inaccessible for simple agreements, while generic chatbots frequently hallucinate dates, terms, and non-existent obligations.
+Every day, freelancers, small business owners, and consumers sign agreements filled with archaic legalese, ambiguous terms, strict deadlines, and one-sided liabilities. Professional legal review is often inaccessible for routine agreements, while generic LLMs frequently hallucinate dates, terms, and non-existent obligations.
 
-**LEXORA LITE** is an educational legal assistance MVP that transforms dense contracts into structured, plain-language insights with **100% verbatim grounded evidence** directly from the source text.
+**LEXORA LITE** is an educational legal document assistant that bridges this gap. It translates complex contracts into structured, plain-language insights backed by a **deterministic evidence verification engine** that mathematically verifies all quoted citations against raw source text with **zero hallucinations**.
 
 ### 🔄 The Before & After Experience
 
@@ -38,7 +41,7 @@ Every day, freelancers, small business owners, and consumers sign agreements fil
 | ❌ Dense paragraphs of confusing legalese | ✅ Executive plain-language summary in 2–3 sentences |
 | ❌ Buried liabilities and hidden deadlines | ✅ Color-coded clause cards (*Informational*, *Review*, *Needs Clarification*) |
 | ❌ Vague assumptions about party responsibilities | ✅ Isolated party duties (Client vs. Provider vs. Landlord) |
-| ❌ Chatbots hallucinating unmentioned terms | ✅ Strict grounding with verbatim quotes & instant omission detection |
+| ❌ Chatbots hallucinating unmentioned terms | ✅ Deterministic quote verification & omission detection |
 | ❌ Uncertainty about what to ask an attorney | ✅ Pre-signing checklist generated dynamically for legal consultation |
 
 ---
@@ -46,21 +49,21 @@ Every day, freelancers, small business owners, and consumers sign agreements fil
 ## ✨ 2. Core Capabilities & Feature Matrix
 
 ```
-  ┌─────────────────────────────────────────────────────────────────────────┐
-  │                           LEXORA LITE SUITE                             │
-  ├─────────────────────┬─────────────────────┬─────────────────────────────┤
-  │   📥 DOCUMENT       │    🔍 GROUNDED      │       💬 CONVERSATIONAL     │
-  │      INPUT          │       ANALYSIS      │          ASSISTANT          │
-  │  • Textarea editor  │  • Executive summary│  • Grounded Q&A console     │
-  │  • File upload      │  • Clause extraction│  • Exact quote citations    │
-  │  • Sample presets   │  • Party obligations│  • Unstated info detection  │
-  │  • Read-time metric │  • Timeline limits  │  • Suggested inquiry chips  │
-  └─────────────────────┴─────────────────────┴─────────────────────────────┘
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │                              LEXORA LITE SUITE                              │
+  ├──────────────────────┬──────────────────────┬───────────────────────────────┤
+  │   📥 DOCUMENT        │    🔍 GROUNDED       │       💬 CONVERSATIONAL       │
+  │      INPUT           │       ANALYSIS       │          ASSISTANT            │
+  │  • Textarea editor   │  • Executive summary │  • Grounded Q&A console       │
+  │  • File upload (.txt)│  • Clause extraction │  • Deterministic quote checks │
+  │  • Sample presets    │  • Party obligations │  • Unstated info detection    │
+  │  • Read-time metric  │  • Timeline limits   │  • Suggested inquiry chips    │
+  └──────────────────────┴──────────────────────┴───────────────────────────────┘
 ```
 
 ### 1. Document Input & Presets
 - **Multi-Format Input:** Direct text pasting or drag-and-drop file upload (`.txt`, `.md`).
-- **One-Click Demo Presets:** Includes pre-loaded standard agreements (*Service Agreement*, *Mutual NDA*, and *Independent Contractor Agreement*).
+- **One-Click Demo Presets:** Pre-loaded standard agreements (*Service Agreement*, *Mutual NDA*, and *Independent Contractor Agreement*).
 - **Live Metrics:** Real-time character count, word count, and estimated reading time.
 
 ### 2. Grounded Clause Extraction & Review Levels
@@ -79,15 +82,48 @@ Every day, freelancers, small business owners, and consumers sign agreements fil
 ### 4. Interactive Pre-Signing Checklist
 - **Preparation for Legal Counsel:** Actionable discussion points to raise with an attorney.
 - **Local State Tracking:** Check off reviewed items with a live progress bar.
-- **Export Capabilities:** One-click **"Export .MD"** and **"Copy Report"** functions.
+- **Export Capabilities:** One-click **"Export .MD"** (downloads formatted markdown) and **"Copy Report"** functions.
 
 ### 5. Document-Grounded Q&A Console
 - **Strict Bounding:** Answers questions using *only* facts explicitly stated in the document.
-- **Anti-Hallucination Indicator:** Flags unmentioned inquiries (e.g., company registration numbers or unstated fees) with a clear `Not Specified in Document` badge.
+- **Anti-Hallucination Detection:** Flags unmentioned inquiries (e.g., company registration numbers) with a clear `Not Specified in Document Text` badge.
 
 ---
 
-## 🏗️ 3. GenAI Architecture & Data Flow
+## 🔬 3. Deterministic Evidence Verification Engine
+
+To ensure that AI-generated citations are genuine and never fabricated, LEXORA LITE incorporates a **deterministic evidence verification layer** ([`lib/validation/evidence.ts`](file:///c:/Users/allan/Documents/Projects/Lexora%20Lite/lib/validation/evidence.ts)).
+
+```
++-------------------------------------------------------------------------------+
+|                        DETERMINISTIC VERIFICATION FLOW                        |
++-------------------------------------------------------------------------------+
+  [ Model Quoted Evidence ] ───► [ Normalization & Strip Quotes ]
+                                              │
+                                              ▼
+                             [ Check Substring in Source Text ]
+                                    /                   \
+                            MATCH FOUND?              NO MATCH?
+                                /                           \
+                               ▼                             ▼
+                    🟢 STATUS: "verified"            [ Token Overlap Check ]
+                 (Verified in Source Text)                 /         \
+                                                   OVERLAP ≥ 80%?   < 80%
+                                                         /             \
+                                                        ▼               ▼
+                                              🟡 "model_quoted"    🔴 "unverified"
+                                              (Partial Citation)   (Review Needed)
+```
+
+### Citation Status Tiers
+1. 🟢 **`Verified in Source Text`**: The quoted citation exists verbatim in the source document.
+2. 🟡 **`Model Supporting Reference`**: The quote closely matches (≥ 80% token overlap) with minor punctuation or whitespace variations.
+3. 🔴 **`Unverified Citation • Review Needed`**: The citation text is missing from the document; the item is automatically escalated to **"Review Needed"**.
+4. ⚪ **`Evidence Unavailable`**: Rendered safely when no textual quote exists.
+
+---
+
+## 🏗️ 4. GenAI Architecture & Data Flow
 
 ```
                       [ USER LEGAL DOCUMENT ]
@@ -113,20 +149,24 @@ Every day, freelancers, small business owners, and consumers sign agreements fil
                                 ▼
                   [ ZOD RUNTIME PARSER & CHECKER ]
               - Validates all fields, arrays, and enums
-              - Ensures evidence string integrity
+                                │
+                                ▼
+                [ DETERMINISTIC EVIDENCE VERIFIER ]
+              - Cross-checks quotes against raw source text
+              - Flags unverified text & escalates risk
                                 │
                                 ▼
                    [ LEXORA LITE RESULTS HUB ]
               - Executive overview & metric counters
-              - Clause comparison & verifiable quotes
+              - Clause comparison & verified quotes
               - Interactive checklist & Q&A history
 ```
 
 ---
 
-## 🛡️ 4. Prompt Engineering & Safety Directives
+## 🛡️ 5. Prompt Engineering & Safety Directives
 
-LEXORA LITE uses defensible, secure system instructions engineered in [`lib/ai/prompts.ts`](file:///c:/Users/allan/Documents/Projects/Lexora%20Lite/lib/ai/prompts.ts):
+LEXORA LITE uses defensible system instructions engineered in [`lib/ai/prompts.ts`](file:///c:/Users/allan/Documents/Projects/Lexora%20Lite/lib/ai/prompts.ts):
 
 1. **Untrusted Input Isolation:** Treats all user text strictly as raw data to prevent prompt injection and jailbreaking attempts.
 2. **Verbatim Evidence Mandate:** Instructs the model to quote exact sentence fragments rather than paraphrasing.
@@ -135,7 +175,7 @@ LEXORA LITE uses defensible, secure system instructions engineered in [`lib/ai/p
 
 ---
 
-## ⚡ 5. Quick Start & Local Installation
+## ⚡ 6. Quick Start & Local Installation
 
 ### Prerequisites
 - **Node.js**: v18.17+ or v20+
@@ -179,21 +219,21 @@ LEXORA LITE uses defensible, secure system instructions engineered in [`lib/ai/p
 
 ---
 
-## 🧪 6. Interactive Demo & Test Scenarios
+## 🧪 7. Interactive Demo & Test Scenarios
 
 ### Scenario A: Standard Service Agreement
 1. Open the app and click **"Load Sample" &rarr; "Service Agreement"**.
 2. Click **"Analyze Document"** (or press <kbd>Ctrl+Enter</kbd>).
 3. Observe:
    - **Executive Summary:** Identifies the 30-day payment and termination terms.
-   - **Payment Clause:** Classified as *Review Needed* with the exact invoice quote.
+   - **Payment Clause:** Classified as *Review Needed* with the exact verified invoice quote.
    - **Confidentiality:** Attributed to the Service Provider.
 
 ### Scenario B: Verification of Grounded Q&A
 - **Supported Query:**  
   *Question:* *"What is the payment deadline?"*  
   *Result:*  
-  🟢 **Grounded in Document:** *"The Client must pay the Service Provider within 30 days of receiving a valid invoice."*  
+  🟢 **Grounded in Document &bull; Verified Quote:** *"The Client must pay the Service Provider within 30 days of receiving a valid invoice."*  
   *Quote:* `"The Client shall pay the Service Provider within 30 days of receiving a valid invoice."`
 
 - **Unsupported Query (Testing Hallucination Prevention):**  
@@ -203,12 +243,13 @@ LEXORA LITE uses defensible, secure system instructions engineered in [`lib/ai/p
 
 ---
 
-## 🚦 7. Automated Testing & Validation
+## 🚦 8. Automated Testing & Quality Suite
 
 The codebase includes an automated validation test suite in [`tests/validation.test.mjs`](file:///c:/Users/allan/Documents/Projects/Lexora%20Lite/tests/validation.test.mjs) verifying:
-- Request input limits (rejection of empty/short inputs).
+- Request input limits (rejection of empty/whitespace inputs).
+- Deterministic quote substring matching and whitespace normalization.
+- Fabricated citation detection.
 - Zod schema adherence for Gemini responses.
-- Safe default fallbacks for missing optional attributes.
 - Grounded vs. ungrounded Q&A response validation.
 
 ```bash
@@ -227,7 +268,18 @@ npm run build
 
 ---
 
-## ⚖️ 8. Legal Safety, Privacy & Scope Boundaries
+## ♿ 9. Accessibility & WCAG 2.1 Conformance
+
+LEXORA LITE is built with full keyboard accessibility and screen reader support:
+- **ARIA Accordions:** `aria-expanded` and `aria-controls` on evidence panels.
+- **Checklist Semantics:** `role="checkbox"` and `aria-checked` with keyboard toggling (<kbd>Space</kbd> / <kbd>Enter</kbd>).
+- **Progress Tracking:** `role="progressbar"` with `aria-valuenow` for live feedback.
+- **Screen Reader Announcements:** `aria-live="polite"` on metric counters and `role="alert"` on error banners.
+- **Color Independence:** Statuses use text labels, distinct borders, and icons rather than color alone.
+
+---
+
+## ⚖️ 10. Legal Safety, Privacy & Scope Boundaries
 
 ### Legal Notice
 > **LEXORA LITE is an educational document comprehension tool.** It does not provide legal representation, determine binding validity, or replace consultation with a qualified legal professional.
