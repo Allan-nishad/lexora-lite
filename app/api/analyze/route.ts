@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { analyzeRequestSchema, analysisResultSchema } from "@/lib/validation/schemas";
 import { SYSTEM_INSTRUCTION_ANALYSIS, buildAnalysisPrompt } from "@/lib/ai/prompts";
 import { callGeminiJSON } from "@/lib/ai/gemini";
+import { verifyEvidence } from "@/lib/validation/evidence";
 import { ZodError } from "zod";
 
 export async function POST(req: NextRequest) {
@@ -48,10 +49,61 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. Return validated result
+    const data = parsedResult.data;
+
+    // 4. Deterministic Evidence Verification Layer
+    // Verify each clause against the raw source document
+    const verifiedClauses = data.clauses.map((clause) => {
+      const verification = verifyEvidence(clause.evidence, documentText);
+      let riskLevel = clause.riskLevel;
+
+      // If evidence cannot be verified or is missing, ensure item is marked for review
+      if (verification.status === "unverified" || verification.status === "missing") {
+        if (riskLevel === "Informational") {
+          riskLevel = "Review";
+        }
+      }
+
+      return {
+        ...clause,
+        riskLevel,
+        evidence: verification.status === "missing" ? "Evidence unavailable in original document." : clause.evidence,
+        evidenceStatus: verification.status,
+        isVerified: verification.isVerified,
+      };
+    });
+
+    // Verify obligations
+    const verifiedObligations = data.obligations.map((obligation) => {
+      const verification = verifyEvidence(obligation.evidence, documentText);
+      return {
+        ...obligation,
+        evidence: verification.status === "missing" ? "Evidence unavailable in original document." : obligation.evidence,
+        evidenceStatus: verification.status,
+        isVerified: verification.isVerified,
+      };
+    });
+
+    // Verify deadlines
+    const verifiedDeadlines = data.deadlines.map((deadline) => {
+      const verification = verifyEvidence(deadline.evidence, documentText);
+      return {
+        ...deadline,
+        evidence: verification.status === "missing" ? "Evidence unavailable in original document." : deadline.evidence,
+        evidenceStatus: verification.status,
+        isVerified: verification.isVerified,
+      };
+    });
+
+    // 5. Return deterministically verified payload
     return NextResponse.json({
       success: true,
-      data: parsedResult.data,
+      data: {
+        ...data,
+        clauses: verifiedClauses,
+        obligations: verifiedObligations,
+        deadlines: verifiedDeadlines,
+      },
     });
   } catch (err: unknown) {
     const error = err as Error;

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { AskQuestionResponse } from "@/types/analysis";
+import { executeDocumentQA } from "@/lib/services/analyzer";
 import {
   MessageSquare,
   Send,
@@ -52,24 +53,12 @@ export function DocumentQA({ documentText }: DocumentQAProps) {
     setErrorMessage(null);
 
     try {
-      const res = await fetch("/api/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          documentText: documentText,
-          question: q,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to answer question.");
-      }
+      const qaResult = await executeDocumentQA(documentText, q);
 
       const newItem: QAHistoryItem = {
         id: Math.random().toString(36).substring(2, 9),
         question: q,
-        response: data.data,
+        response: qaResult,
         timestamp: new Date(),
       };
 

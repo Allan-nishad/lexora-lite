@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { askRequestSchema, askResponseSchema } from "@/lib/validation/schemas";
 import { SYSTEM_INSTRUCTION_QA, buildQAPrompt } from "@/lib/ai/prompts";
 import { callGeminiJSON } from "@/lib/ai/gemini";
+import { verifyEvidence } from "@/lib/validation/evidence";
 import { ZodError } from "zod";
 
 export async function POST(req: NextRequest) {
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
       prompt
     );
 
-    // 3. Validate response
+    // 3. Validate response schema
     const parsedResult = askResponseSchema.safeParse(rawAiResult);
     if (!parsedResult.success) {
       console.error(
@@ -48,10 +49,34 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. Return validated result
+    const data = parsedResult.data;
+
+    // 4. Deterministic Evidence Verification Layer
+    let evidenceStatus: "verified" | "model_quoted" | "unverified" | "missing" = "missing";
+    let isVerified = false;
+    let finalEvidence = data.evidence;
+
+    if (data.foundInDocument && data.evidence) {
+      const verification = verifyEvidence(data.evidence, documentText);
+      evidenceStatus = verification.status;
+      isVerified = verification.isVerified;
+      if (verification.status === "missing") {
+        finalEvidence = "";
+      }
+    } else {
+      evidenceStatus = "missing";
+      finalEvidence = "";
+    }
+
+    // 5. Return validated result
     return NextResponse.json({
       success: true,
-      data: parsedResult.data,
+      data: {
+        ...data,
+        evidence: finalEvidence,
+        evidenceStatus,
+        isVerified,
+      },
     });
   } catch (err: unknown) {
     const error = err as Error;
