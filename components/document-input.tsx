@@ -108,17 +108,21 @@ export function DocumentInput({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-md transition-all p-5 sm:p-7 space-y-5">
+    <section
+      aria-label="Document Input Workspace"
+      aria-busy={isLoading}
+      className="bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-md transition-all p-5 sm:p-7 space-y-5"
+    >
       {/* Top action row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
         <div>
           <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-              <FileSignature className="w-4 h-4" />
+              <FileSignature className="w-4 h-4" aria-hidden="true" />
             </div>
             Document Input Workspace
           </h2>
-          <p className="text-xs text-slate-500 mt-1">
+          <p id="workspace-desc" className="text-xs text-slate-500 mt-1">
             Paste contract text, terms of service, or load a preset sample below.
           </p>
         </div>
@@ -127,19 +131,21 @@ export function DocumentInput({
           {/* File upload hidden input */}
           <input
             type="file"
+            id="file-upload-input"
             ref={fileInputRef}
             onChange={handleFileUpload}
             accept=".txt,.md,.text"
             className="hidden"
+            aria-label="Upload document as text file"
           />
 
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer"
-            title="Upload .txt or .md text file"
+            aria-label="Upload document text file"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <Upload className="w-3.5 h-3.5 text-slate-500" />
+            <Upload className="w-3.5 h-3.5 text-slate-500" aria-hidden="true" />
             <span>Upload Text File</span>
           </button>
 
@@ -147,9 +153,10 @@ export function DocumentInput({
             type="button"
             onClick={handleClear}
             disabled={!documentText && !documentTitle}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 border border-slate-200 rounded-xl transition-all disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+            aria-label="Clear document text and title"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 border border-slate-200 rounded-xl transition-all disabled:opacity-40 disabled:pointer-events-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-rose-500"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
             <span>Clear</span>
           </button>
         </div>
@@ -159,30 +166,34 @@ export function DocumentInput({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-blue-600" />
+            <Sparkles className="w-3 h-3 text-blue-600" aria-hidden="true" />
             Quick Demo Presets:
           </span>
           {activePreset && (
-            <span className="text-[11px] text-blue-600 font-semibold flex items-center gap-1">
-              <Check className="w-3 h-3" /> Sample loaded
+            <span
+              aria-live="polite"
+              className="text-[11px] text-blue-600 font-semibold flex items-center gap-1"
+            >
+              <Check className="w-3 h-3" aria-hidden="true" /> Sample loaded
             </span>
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" role="group" aria-label="Sample Document Presets">
           <button
             type="button"
             onClick={() =>
               loadSample("service", "Service Agreement (Standard)", SAMPLE_SERVICE_AGREEMENT)
             }
-            className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer ${
+            aria-pressed={activePreset === "service"}
+            className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               activePreset === "service"
                 ? "bg-blue-50/80 border-blue-400 ring-2 ring-blue-500/10 text-blue-950"
                 : "bg-slate-50/70 hover:bg-slate-100/80 border-slate-200 text-slate-700"
             }`}
           >
             <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-              <FileCheck className="w-3.5 h-3.5 text-blue-600" />
+              <FileCheck className="w-3.5 h-3.5 text-blue-600" aria-hidden="true" />
               Service Agreement
             </div>
             <p className="text-[11px] text-slate-500 mt-0.5 truncate">
@@ -195,14 +206,15 @@ export function DocumentInput({
             onClick={() =>
               loadSample("nda", "Mutual Non-Disclosure Agreement", SAMPLE_NDA)
             }
-            className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer ${
+            aria-pressed={activePreset === "nda"}
+            className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               activePreset === "nda"
                 ? "bg-blue-50/80 border-blue-400 ring-2 ring-blue-500/10 text-blue-950"
                 : "bg-slate-50/70 hover:bg-slate-100/80 border-slate-200 text-slate-700"
             }`}
           >
             <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-              <FileCheck className="w-3.5 h-3.5 text-blue-600" />
+              <FileCheck className="w-3.5 h-3.5 text-blue-600" aria-hidden="true" />
               Mutual NDA
             </div>
             <p className="text-[11px] text-slate-500 mt-0.5 truncate">
@@ -215,14 +227,15 @@ export function DocumentInput({
             onClick={() =>
               loadSample("contractor", "Independent Contractor Agreement", SAMPLE_FREELANCE)
             }
-            className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer ${
+            aria-pressed={activePreset === "contractor"}
+            className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               activePreset === "contractor"
                 ? "bg-blue-50/80 border-blue-400 ring-2 ring-blue-500/10 text-blue-950"
                 : "bg-slate-50/70 hover:bg-slate-100/80 border-slate-200 text-slate-700"
             }`}
           >
             <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-              <FileCheck className="w-3.5 h-3.5 text-blue-600" />
+              <FileCheck className="w-3.5 h-3.5 text-blue-600" aria-hidden="true" />
               Contractor Agreement
             </div>
             <p className="text-[11px] text-slate-500 mt-0.5 truncate">
@@ -261,11 +274,14 @@ export function DocumentInput({
             htmlFor="doc-text"
             className="block text-xs font-bold text-slate-700 uppercase tracking-wider"
           >
-            Legal Document Text <span className="text-rose-500">*</span>
+            Legal Document Text <span className="text-rose-500" aria-label="required">*</span>
           </label>
           {wordCount > 0 && (
-            <span className="text-[11px] text-slate-500 flex items-center gap-1">
-              <Clock className="w-3 h-3 text-slate-400" />
+            <span
+              aria-live="polite"
+              className="text-[11px] text-slate-500 flex items-center gap-1"
+            >
+              <Clock className="w-3 h-3 text-slate-400" aria-hidden="true" />
               ~{estimatedReadTime} min read
             </span>
           )}
@@ -281,6 +297,9 @@ export function DocumentInput({
             }}
             onKeyDown={handleKeyDown}
             rows={10}
+            aria-required="true"
+            aria-describedby={errorMessage ? "doc-input-error workspace-desc" : "workspace-desc"}
+            aria-invalid={!!errorMessage}
             placeholder="Paste contract clauses, terms, conditions, leases, or vendor agreements here..."
             className="w-full px-4 py-3.5 text-sm font-mono leading-relaxed bg-slate-50/40 border border-slate-200/90 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 transition-all resize-y placeholder:font-sans placeholder:text-slate-400 shadow-inner"
           />
@@ -288,7 +307,7 @@ export function DocumentInput({
 
         {/* Counter & Hint */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-500 gap-1.5 px-1 pt-1">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3" aria-live="polite">
             <span className="bg-slate-100 px-2 py-0.5 rounded-md font-medium text-slate-700 text-[11px]">
               {characterCount.toLocaleString()} chars
             </span>
@@ -307,8 +326,13 @@ export function DocumentInput({
 
       {/* Error Message */}
       {errorMessage && (
-        <div className="p-4 bg-rose-50/90 border border-rose-200 rounded-xl flex items-start gap-3 text-xs text-rose-900 shadow-2xs">
-          <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+        <div
+          id="doc-input-error"
+          role="alert"
+          aria-live="assertive"
+          className="p-4 bg-rose-50/90 border border-rose-200 rounded-xl flex items-start gap-3 text-xs text-rose-900 shadow-2xs"
+        >
+          <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
           <div className="flex-1 font-semibold">{errorMessage}</div>
         </div>
       )}
@@ -323,21 +347,23 @@ export function DocumentInput({
           type="button"
           onClick={onAnalyze}
           disabled={isLoading || documentText.trim().length < 10}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:from-blue-800 active:to-indigo-800 text-white font-bold text-sm rounded-xl shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/35 transition-all transform active:scale-98 disabled:opacity-50 disabled:pointer-events-none disabled:transform-none cursor-pointer"
+          aria-busy={isLoading}
+          aria-label={isLoading ? "Analyzing document with AI" : "Analyze document"}
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:from-blue-800 active:to-indigo-800 text-white font-bold text-sm rounded-xl shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/35 transition-all transform active:scale-98 disabled:opacity-50 disabled:pointer-events-none disabled:transform-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           {isLoading ? (
             <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
               <span>Analyzing with Google Gemini...</span>
             </>
           ) : (
             <>
-              <Play className="w-4 h-4 fill-white" />
+              <Play className="w-4 h-4 fill-white" aria-hidden="true" />
               <span>Analyze Document</span>
             </>
           )}
         </button>
       </div>
-    </div>
+    </section>
   );
 }

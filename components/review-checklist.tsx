@@ -25,6 +25,13 @@ export function ReviewChecklist({ items }: ReviewChecklistProps) {
     }));
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent, idx: number) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      toggleItem(idx);
+    }
+  };
+
   const handleMarkAll = () => {
     const allChecked: Record<number, boolean> = {};
     items.forEach((_, idx) => {
@@ -68,7 +75,7 @@ export function ReviewChecklist({ items }: ReviewChecklistProps) {
         <div>
           <h3 className="font-extrabold text-slate-900 text-lg flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center">
-              <CheckSquare className="w-4 h-4" />
+              <CheckSquare className="w-4 h-4" aria-hidden="true" />
             </div>
             Pre-Signing Review Checklist
           </h3>
@@ -78,7 +85,10 @@ export function ReviewChecklist({ items }: ReviewChecklistProps) {
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="bg-slate-50 border border-slate-200/80 px-3.5 py-2 rounded-xl text-right flex items-center gap-3">
+          <div
+            className="bg-slate-50 border border-slate-200/80 px-3.5 py-2 rounded-xl text-right flex items-center gap-3"
+            aria-label={`${checkedCount} of ${totalCount} items reviewed, ${progressPercent} percent complete`}
+          >
             <div>
               <div className="text-xs font-black text-slate-900">
                 {checkedCount} / {totalCount} Reviewed
@@ -87,7 +97,13 @@ export function ReviewChecklist({ items }: ReviewChecklistProps) {
                 {progressPercent}% Complete
               </div>
             </div>
-            <div className="w-16 h-2.5 bg-slate-200 rounded-full overflow-hidden">
+            <div
+              className="w-16 h-2.5 bg-slate-200 rounded-full overflow-hidden"
+              role="progressbar"
+              aria-valuenow={progressPercent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
               <div
                 className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 transition-all duration-300"
                 style={{ width: `${progressPercent}%` }}
@@ -99,16 +115,17 @@ export function ReviewChecklist({ items }: ReviewChecklistProps) {
             <button
               type="button"
               onClick={handleCopyChecklist}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-700 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 border border-slate-200 rounded-xl transition-all cursor-pointer"
+              aria-label="Copy checklist to clipboard"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-700 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 border border-slate-200 rounded-xl transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <Check className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
                   <span className="text-emerald-700">Copied</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5" />
+                  <Copy className="w-3.5 h-3.5" aria-hidden="true" />
                   <span>Copy List</span>
                 </>
               )}
@@ -118,10 +135,10 @@ export function ReviewChecklist({ items }: ReviewChecklistProps) {
               <button
                 type="button"
                 onClick={handleResetChecklist}
-                className="p-2 text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors cursor-pointer"
-                title="Reset checklist"
+                aria-label="Reset checklist checkboxes"
+                className="p-2 text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             )}
           </div>
@@ -137,7 +154,7 @@ export function ReviewChecklist({ items }: ReviewChecklistProps) {
           <button
             type="button"
             onClick={handleMarkAll}
-            className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer"
+            className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer focus:outline-none focus:underline"
           >
             Mark all complete
           </button>
@@ -145,29 +162,30 @@ export function ReviewChecklist({ items }: ReviewChecklistProps) {
       </div>
 
       {/* Checklist items */}
-      <div className="space-y-2.5">
+      <div className="space-y-2.5" role="list" aria-label="Review Items">
         {items.map((item, idx) => {
           const isChecked = !!checkedState[idx];
           return (
             <div
               key={idx}
+              role="checkbox"
+              tabIndex={0}
+              aria-checked={isChecked}
               onClick={() => toggleItem(idx)}
-              className={`flex items-start gap-3.5 p-3.5 rounded-xl border transition-all cursor-pointer select-none ${
+              onKeyDown={(e) => handleKeyDown(e, idx)}
+              className={`flex items-start gap-3.5 p-3.5 rounded-xl border transition-all cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                 isChecked
                   ? "bg-slate-50 border-slate-200 text-slate-400 opacity-80"
                   : "bg-white hover:bg-indigo-50/30 border-slate-200/90 hover:border-indigo-300 text-slate-900 shadow-2xs"
               }`}
             >
-              <button
-                type="button"
-                className="flex-shrink-0 mt-0.5 text-indigo-600 focus:outline-none"
-              >
+              <span className="flex-shrink-0 mt-0.5 text-indigo-600">
                 {isChecked ? (
-                  <CheckSquare className="w-5 h-5 text-emerald-600 fill-emerald-50" />
+                  <CheckSquare className="w-5 h-5 text-emerald-600 fill-emerald-50" aria-hidden="true" />
                 ) : (
-                  <Square className="w-5 h-5 text-slate-300 hover:text-indigo-500 transition-colors" />
+                  <Square className="w-5 h-5 text-slate-300 hover:text-indigo-500 transition-colors" aria-hidden="true" />
                 )}
-              </button>
+              </span>
               <span
                 className={`text-sm font-medium leading-relaxed ${
                   isChecked
@@ -183,7 +201,7 @@ export function ReviewChecklist({ items }: ReviewChecklistProps) {
       </div>
 
       <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl text-[11px] text-amber-900 flex items-start gap-2">
-        <HelpCircle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
+        <HelpCircle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" aria-hidden="true" />
         <p>
           <strong>Attorney Discussion Guide:</strong> Items in this checklist reflect standard clauses that may require commercial alignment or customized drafting before signature.
         </p>

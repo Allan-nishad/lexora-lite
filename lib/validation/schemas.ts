@@ -44,19 +44,22 @@ export const analysisResultSchema = z.object({
 export const analyzeRequestSchema = z.object({
   documentText: z
     .string()
-    .min(10, "Document text is too short (minimum 10 characters)")
+    .trim()
+    .min(10, "Document text is too short (minimum 10 non-whitespace characters)")
     .max(100000, "Document text is too long (maximum 100,000 characters)"),
-  documentTitle: z.string().max(200).optional(),
+  documentTitle: z.string().trim().max(200).optional(),
 });
 
 export const askRequestSchema = z.object({
   documentText: z
     .string()
-    .min(10, "Document text is required (minimum 10 characters)"),
+    .trim()
+    .min(10, "Document text is required (minimum 10 non-whitespace characters)"),
   question: z
     .string()
-    .min(2, "Question is too short")
-    .max(1000, "Question is too long"),
+    .trim()
+    .min(2, "Question is too short (minimum 2 characters)")
+    .max(1000, "Question is too long (maximum 1,000 characters)"),
 });
 
 export const askResponseSchema = z.object({
@@ -70,3 +73,4 @@ export type AnalyzeRequest = z.infer<typeof analyzeRequestSchema>;
 export type AnalysisResultParsed = z.infer<typeof analysisResultSchema>;
 export type AskRequest = z.infer<typeof askRequestSchema>;
 export type AskResponseParsed = z.infer<typeof askResponseSchema>;
+export type ReviewLevel = z.infer<typeof reviewLevelEnum>;

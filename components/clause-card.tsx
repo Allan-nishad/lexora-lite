@@ -46,7 +46,6 @@ export function ClauseCard({ clause, index }: ClauseCardProps) {
         return {
           container: "bg-amber-50 text-amber-900 border-amber-300",
           barColor: "border-l-amber-500",
-          accentBg: "bg-amber-500/10",
           icon: ShieldAlert,
           label: "Review Needed",
         };
@@ -54,7 +53,6 @@ export function ClauseCard({ clause, index }: ClauseCardProps) {
         return {
           container: "bg-purple-50 text-purple-900 border-purple-300",
           barColor: "border-l-purple-500",
-          accentBg: "bg-purple-500/10",
           icon: HelpCircle,
           label: "Needs Clarification",
         };
@@ -63,7 +61,6 @@ export function ClauseCard({ clause, index }: ClauseCardProps) {
         return {
           container: "bg-sky-50 text-sky-900 border-sky-300",
           barColor: "border-l-blue-500",
-          accentBg: "bg-blue-500/10",
           icon: Info,
           label: "Informational",
         };
@@ -79,21 +76,28 @@ export function ClauseCard({ clause, index }: ClauseCardProps) {
     clause.evidence !== "No direct quote available.";
 
   return (
-    <div
+    <article
+      aria-labelledby={`clause-title-${index}`}
       className={`bg-white rounded-2xl border border-slate-200/90 border-l-4 ${badge.barColor} shadow-xs hover:shadow-md transition-all p-5 sm:p-6 space-y-4`}
     >
       {/* Header with Title & Level Badge */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-mono text-xs font-black flex items-center justify-center flex-shrink-0">
+          <span
+            aria-hidden="true"
+            className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-mono text-xs font-black flex items-center justify-center flex-shrink-0"
+          >
             {index + 1}
           </span>
-          <h4 className="font-extrabold text-slate-900 text-base sm:text-lg tracking-tight">
+          <h4
+            id={`clause-title-${index}`}
+            className="font-extrabold text-slate-900 text-base sm:text-lg tracking-tight"
+          >
             {clause.title}
           </h4>
           {clause.category && (
             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 bg-slate-100/80 border border-slate-200 px-2.5 py-0.5 rounded-md">
-              <Tag className="w-3 h-3 text-slate-400" />
+              <Tag className="w-3 h-3 text-slate-400" aria-hidden="true" />
               {clause.category}
             </span>
           )}
@@ -103,7 +107,7 @@ export function ClauseCard({ clause, index }: ClauseCardProps) {
           <span
             className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-2xs ${badge.container}`}
           >
-            <BadgeIcon className="w-3.5 h-3.5 flex-shrink-0" />
+            <BadgeIcon className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
             <span>{badge.label}</span>
           </span>
         </div>
@@ -112,7 +116,7 @@ export function ClauseCard({ clause, index }: ClauseCardProps) {
       {/* Parties Involved */}
       {clause.parties && clause.parties.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap text-xs text-slate-500">
-          <Users className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+          <Users className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" aria-hidden="true" />
           <span className="font-bold text-slate-700 text-[11px] uppercase tracking-wider">
             Binding Parties:
           </span>
@@ -131,23 +135,23 @@ export function ClauseCard({ clause, index }: ClauseCardProps) {
       <div className="text-slate-800 text-sm sm:text-base leading-relaxed bg-slate-50/80 p-4 rounded-xl border border-slate-200/70 relative">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-900 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+            <Sparkles className="w-3.5 h-3.5 text-blue-600" aria-hidden="true" />
             Plain-Language Meaning
           </span>
           <button
             type="button"
             onClick={copyExplanation}
-            className="text-[11px] text-slate-400 hover:text-slate-700 flex items-center gap-1 cursor-pointer transition-colors"
-            title="Copy plain-language explanation"
+            aria-label={`Copy plain-language explanation for ${clause.title}`}
+            className="text-[11px] text-slate-400 hover:text-slate-700 flex items-center gap-1 cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded p-0.5"
           >
             {copiedSummary ? (
               <>
-                <Check className="w-3 h-3 text-emerald-600" />
+                <Check className="w-3 h-3 text-emerald-600" aria-hidden="true" />
                 <span className="text-emerald-700 font-semibold">Copied</span>
               </>
             ) : (
               <>
-                <Copy className="w-3 h-3" />
+                <Copy className="w-3 h-3" aria-hidden="true" />
                 <span>Copy meaning</span>
               </>
             )}
@@ -162,10 +166,12 @@ export function ClauseCard({ clause, index }: ClauseCardProps) {
           <button
             type="button"
             onClick={() => setIsEvidenceExpanded(!isEvidenceExpanded)}
-            className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-bold text-indigo-950 hover:bg-indigo-50/80 transition-colors cursor-pointer"
+            aria-expanded={isEvidenceExpanded}
+            aria-controls={`evidence-content-${index}`}
+            className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-bold text-indigo-950 hover:bg-indigo-50/80 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <div className="flex items-center gap-2">
-              <Quote className="w-3.5 h-3.5 text-indigo-600" />
+              <Quote className="w-3.5 h-3.5 text-indigo-600" aria-hidden="true" />
               <span>Original Document Verbatim Evidence</span>
             </div>
             <div className="flex items-center gap-1 text-slate-400 font-normal">
@@ -173,15 +179,18 @@ export function ClauseCard({ clause, index }: ClauseCardProps) {
                 {isEvidenceExpanded ? "Hide quote" : "Show quote"}
               </span>
               {isEvidenceExpanded ? (
-                <ChevronUp className="w-3.5 h-3.5" />
+                <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" />
               ) : (
-                <ChevronDown className="w-3.5 h-3.5" />
+                <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
               )}
             </div>
           </button>
 
           {isEvidenceExpanded && (
-            <div className="px-4 pb-4 pt-1 space-y-2.5 border-t border-indigo-100/60">
+            <div
+              id={`evidence-content-${index}`}
+              className="px-4 pb-4 pt-1 space-y-2.5 border-t border-indigo-100/60"
+            >
               <blockquote className="text-xs text-slate-900 font-mono bg-white p-3.5 rounded-lg border-l-4 border-indigo-500 shadow-2xs leading-relaxed whitespace-pre-wrap">
                 &ldquo;{clause.evidence}&rdquo;
               </blockquote>
@@ -193,22 +202,23 @@ export function ClauseCard({ clause, index }: ClauseCardProps) {
                   </span>
                 ) : (
                   <span className="text-emerald-700 font-medium flex items-center gap-1">
-                    <Check className="w-3 h-3" /> Exact quote matched in text
+                    <Check className="w-3 h-3" aria-hidden="true" /> Exact quote matched in text
                   </span>
                 )}
                 <button
                   type="button"
                   onClick={copyEvidence}
-                  className="ml-auto inline-flex items-center gap-1 text-indigo-700 hover:text-indigo-950 font-bold cursor-pointer"
+                  aria-label={`Copy original quote for ${clause.title}`}
+                  className="ml-auto inline-flex items-center gap-1 text-indigo-700 hover:text-indigo-950 font-bold cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded p-0.5"
                 >
                   {copiedEvidence ? (
                     <>
-                      <Check className="w-3 h-3 text-emerald-600" />
+                      <Check className="w-3 h-3 text-emerald-600" aria-hidden="true" />
                       <span className="text-emerald-700">Copied</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3 h-3" />
+                      <Copy className="w-3 h-3" aria-hidden="true" />
                       <span>Copy Exact Quote</span>
                     </>
                   )}
@@ -222,6 +232,6 @@ export function ClauseCard({ clause, index }: ClauseCardProps) {
           No direct verbatim quote declared for this general entry.
         </div>
       )}
-    </div>
+    </article>
   );
 }
