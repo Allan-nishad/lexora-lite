@@ -8,7 +8,6 @@ import { AnalysisResults } from "@/components/analysis-results";
 import { DocumentQA } from "@/components/document-qa";
 import { Footer } from "@/components/footer";
 import { AnalysisResult } from "@/types/analysis";
-import { executeDocumentAnalysis } from "@/lib/services/analyzer";
 import {
   Sparkles,
   FileSearch,
@@ -46,12 +45,26 @@ export default function Home() {
     setErrorMessage(null);
 
     try {
-      const result = await executeDocumentAnalysis(
-        text,
-        documentTitle.trim() || undefined
-      );
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          documentText: text,
+          documentTitle: documentTitle.trim() || undefined,
+        }),
+      });
 
-      setAnalysisResult(result);
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(
+          data.error || "Failed to analyze document. Please check your configuration."
+        );
+      }
+
+      setAnalysisResult(data.data);
       setAnalyzedDocText(text);
 
       // Smooth scroll to results

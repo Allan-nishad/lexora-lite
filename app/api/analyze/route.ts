@@ -9,9 +9,26 @@ import { analysisCache } from "@/lib/cache/lru-cache";
 import { AnalysisResult } from "@/types/analysis";
 import { ZodError } from "zod";
 
+const MAX_PAYLOAD_BYTES = 250 * 1024; // 250 KB max request body
+
+const SECURITY_HEADERS = {
+  "X-Content-Type-Options": "nosniff",
+  "Cache-Control": "no-store, max-age=0",
+  "Pragma": "no-cache",
+};
+
 export async function POST(req: NextRequest) {
   try {
-    // 1. Rate Limiting Protection
+    // 1. Content-Type Header Enforcement
+    const contentType = req.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      return NextResponse.json(
+        { error: "Unsupported Media Type. Request Content-Type must be application/json." },
+        { status: 415, headers: SECURITY_HEADERS }
+      );
+    }
+
+    // 2. Rate Limiting Protection
     const clientIp =
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       req.headers.get("x-real-ip") ||
@@ -23,31 +40,42 @@ export async function POST(req: NextRequest) {
         {
           error: "Rate limit exceeded. Please wait a few seconds before analyzing another document.",
         },
-        { status: 429 }
+        { status: 429, headers: SECURITY_HEADERS }
       );
     }
 
-    const body = await req.json().catch(() => null);
-    if (!body) {
+    // 3. Request Body Size & JSON Validation
+    const textBody = await req.text().catch(() => null);
+    if (!textBody || textBody.length > MAX_PAYLOAD_BYTES) {
       return NextResponse.json(
-        { error: "Invalid JSON request body." },
-        { status: 400 }
+        { error: "Payload too large or empty. Maximum allowed request size is 250KB." },
+        { status: 413, headers: SECURITY_HEADERS }
       );
     }
 
-    // 2. Validate incoming request structure
+    let body: unknown;
+    try {
+      body = JSON.parse(textBody);
+    } catch {
+      return NextResponse.json(
+        { error: "Malformed JSON payload." },
+        { status: 400, headers: SECURITY_HEADERS }
+      );
+    }
+
+    // 4. Validate incoming request schema
     const validationResult = analyzeRequestSchema.safeParse(body);
     if (!validationResult.success) {
       const errorMsg = validationResult.error.issues
         .map((e) => e.message)
         .join(", ");
-      return NextResponse.json({ error: errorMsg }, { status: 400 });
+      return NextResponse.json({ error: errorMsg }, { status: 400, headers: SECURITY_HEADERS });
     }
 
     const rawDocText = validationResult.data.documentText;
     const rawDocTitle = validationResult.data.documentTitle;
 
-    // 3. Security Sanitization & Injection Detection
+    // 5. Security Sanitization & Injection Detection
     const documentText = sanitizeInputText(rawDocText);
     const documentTitle = rawDocTitle ? sanitizeInputText(rawDocTitle) : undefined;
 
@@ -57,29 +85,32 @@ export async function POST(req: NextRequest) {
         {
           error: "Document submission rejected: Potential prompt injection or jailbreak patterns detected.",
         },
-        { status: 422 }
+        { status: 422, headers: SECURITY_HEADERS }
       );
     }
 
-    // 4. Check LRU Cache for Instant Response
+    // 6. Check LRU Cache for Instant Response
     const cacheKey = analysisCache.hashKey("analysis", `${documentTitle || ""}_${documentText}`);
     const cachedResult = analysisCache.get(cacheKey) as AnalysisResult | null;
     if (cachedResult) {
-      return NextResponse.json({
-        success: true,
-        data: cachedResult,
-        cached: true,
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          data: cachedResult,
+          cached: true,
+        },
+        { headers: SECURITY_HEADERS }
+      );
     }
 
-    // 5. Build prompt and invoke Google Gemini
+    // 7. Build prompt and invoke Google Gemini
     const prompt = buildAnalysisPrompt(documentText, documentTitle);
     const rawAiResult = await callGeminiJSON<unknown>(
       SYSTEM_INSTRUCTION_ANALYSIS,
       prompt
     );
 
-    // 6. Validate AI output against strict Zod schema
+    // 8. Validate AI output against strict Zod schema
     const parsedResult = analysisResultSchema.safeParse(rawAiResult);
     if (!parsedResult.success) {
       console.error(
@@ -91,13 +122,13 @@ export async function POST(req: NextRequest) {
           error:
             "The AI generated a response that did not match the required schema. Please try again.",
         },
-        { status: 502 }
+        { status: 502, headers: SECURITY_HEADERS }
       );
     }
 
     const data = parsedResult.data;
 
-    // 7. Deterministic Evidence Verification Layer
+    // 9. Deterministic Evidence Verification Layer
     const verifiedClauses = data.clauses.map((clause) => {
       const verification = verifyEvidence(clause.evidence, documentText);
       let riskLevel = clause.riskLevel;
@@ -147,10 +178,13 @@ export async function POST(req: NextRequest) {
     // Save in LRU cache
     analysisCache.set(cacheKey, finalResult);
 
-    return NextResponse.json({
-      success: true,
-      data: finalResult,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: finalResult,
+      },
+      { headers: SECURITY_HEADERS }
+    );
   } catch (err: unknown) {
     const error = err as Error;
     console.error("[Analyze API] Error:", error.message);
@@ -158,7 +192,7 @@ export async function POST(req: NextRequest) {
     if (error instanceof ZodError) {
       return NextResponse.json(
         { error: "Validation failed: " + error.message },
-        { status: 400 }
+        { status: 400, headers: SECURITY_HEADERS }
       );
     }
 
@@ -168,13 +202,13 @@ export async function POST(req: NextRequest) {
           error:
             "Gemini API key is not configured. Please add GEMINI_API_KEY to your environment variables.",
         },
-        { status: 500 }
+        { status: 500, headers: SECURITY_HEADERS }
       );
     }
 
     return NextResponse.json(
       { error: "Internal analysis error: " + error.message },
-      { status: 500 }
+      { status: 500, headers: SECURITY_HEADERS }
     );
   }
 }

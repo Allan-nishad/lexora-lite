@@ -14,22 +14,17 @@ const NATIVE_GEMINI_MODELS = [
 ];
 
 function getApiKey(): string {
-  const apiKey =
-    process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
-    process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey.trim() === "" || apiKey === "your_gemini_api_key_here") {
     throw new Error(
-      "GEMINI_API_KEY is not configured. Please set a valid Gemini API key."
+      "GEMINI_API_KEY is not configured. Please set a valid Gemini API key in your server environment."
     );
   }
   return apiKey.trim();
 }
 
 function getBaseUrl(): string | null {
-  const url =
-    process.env.NEXT_PUBLIC_GEMINI_BASE_URL ||
-    process.env.GEMINI_BASE_URL ||
-    process.env.OPENAI_BASE_URL;
+  const url = process.env.GEMINI_BASE_URL || process.env.OPENAI_BASE_URL;
   return url && url.trim() !== "" ? url.trim().replace(/\/+$/, "") : null;
 }
 
@@ -45,10 +40,7 @@ async function callOpenAICompatibleGateway<T>(
   userPrompt: string
 ): Promise<T> {
   const endpoint = `${baseUrl}/v1/chat/completions`;
-  const preferredModel =
-    process.env.NEXT_PUBLIC_GEMINI_MODEL ||
-    process.env.GEMINI_MODEL ||
-    "gemini-3.5-flash-lite";
+  const preferredModel = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
   
   // Only try models allowed by the gateway
   const modelsToTry = [
