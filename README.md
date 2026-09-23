@@ -146,7 +146,7 @@ LEXORA LITE uses defensible, secure system instructions engineered in [`lib/ai/p
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/lexora-lite.git
+   git clone https://github.com/Allan-nishad/lexora-lite.git
    cd lexora-lite
    ```
 
