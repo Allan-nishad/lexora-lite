@@ -33,9 +33,9 @@ jobs:
       - name: Build Next.js Static Export
         env:
           GITHUB_ACTIONS: "true"
-          NEXT_PUBLIC_GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'sk-4CMn1qJ0zmgLdD446YayWeRcxuKZP9C0zl5bRtP1WJc' }}
-          NEXT_PUBLIC_GEMINI_BASE_URL: "https://llm.hidevs.xyz"
-          NEXT_PUBLIC_GEMINI_MODEL: "gemini-3.5-flash-lite"
+          NEXT_PUBLIC_GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          NEXT_PUBLIC_GEMINI_BASE_URL: ${{ secrets.GEMINI_BASE_URL || 'https://llm.hidevs.xyz' }}
+          NEXT_PUBLIC_GEMINI_MODEL: ${{ secrets.GEMINI_MODEL || 'gemini-3.5-flash-lite' }}
         run: npm run build
 
       - name: Upload GitHub Pages Artifact

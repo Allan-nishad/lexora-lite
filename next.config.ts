@@ -4,11 +4,24 @@ const isGithubPages = process.env.GITHUB_ACTIONS === "true" || process.env.DEPLO
 const repoName = "lexora-lite";
 
 const nextConfig: NextConfig = {
-  output: "export",
+  output: isGithubPages ? "export" : undefined,
   basePath: isGithubPages ? `/${repoName}` : "",
   assetPrefix: isGithubPages ? `/${repoName}/` : undefined,
   images: {
     unoptimized: true,
+  },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+    ];
   },
 };
 

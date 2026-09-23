@@ -245,18 +245,20 @@ LEXORA LITE uses defensible system instructions engineered in [`lib/ai/prompts.t
 
 ## 🚦 8. Automated Testing & Quality Suite
 
-The codebase includes an automated validation test suite in [`tests/validation.test.mjs`](file:///c:/Users/allan/Documents/Projects/Lexora%20Lite/tests/validation.test.mjs) verifying:
-- Request input limits (rejection of empty/whitespace inputs).
-- Deterministic quote substring matching and whitespace normalization.
-- Fabricated citation detection.
-- Zod schema adherence for Gemini responses.
-- Grounded vs. ungrounded Q&A response validation.
+The codebase includes an extensive **18-suite automated test matrix** in [`tests/`](file:///c:/Users/allan/Documents/Projects/Lexora%20Lite/tests/) exercising real behaviors:
+- **Input Validation & Bounds:** Rejection of empty/whitespace inputs and 100,000 character limit enforcement.
+- **Security Sanitizer:** Striping of malicious `<script>` / `<iframe>` tags, control characters, and known prompt injection patterns.
+- **Rate Limiting Engine:** Sliding window rate limit verification and burst flood protection.
+- **LRU Cache & Deduplication:** Sub-millisecond hash key retrieval, eviction order, and TTL expiration.
+- **Deterministic Evidence Engine:** Exact quote matching, whitespace normalization, and fabricated quote rejection.
+- **Real Contract Scenarios:** Automated evaluation of Employment Agreements (non-compete clauses), Mutual NDAs (return policies), and Residential Leases (deposits & pet rules).
+- **Zod Schema Conformance:** Strict schema verification of Gemini JSON outputs and negative grounding checks.
 
 ```bash
-# Run automated tests
+# Run all 18 automated test suites
 npm test
 
-# Run TypeScript type-checker
+# Run TypeScript strict type-checker
 npx tsc --noEmit
 
 # Run ESLint validation

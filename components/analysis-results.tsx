@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { AnalysisResult } from "@/types/analysis";
 import { ClauseCard } from "./clause-card";
 import { ObligationsPanel } from "./obligations-panel";
@@ -18,6 +18,8 @@ import {
   Check,
   ShieldAlert,
   Layers,
+  Printer,
+  FileCode,
 } from "lucide-react";
 
 interface AnalysisResultsProps {
@@ -31,29 +33,31 @@ export function AnalysisResults({ result, documentTitle }: AnalysisResultsProps)
   const [activeTab, setActiveTab] = useState<"clauses" | "obligations" | "deadlines" | "checklist">("clauses");
   const [copiedAll, setCopiedAll] = useState(false);
 
-  const clauses = result.clauses || [];
-  const reviewCount = clauses.filter((c) => c.riskLevel === "Review").length;
-  const clarifyCount = clauses.filter((c) => c.riskLevel === "Needs clarification").length;
-  const infoCount = clauses.filter((c) => c.riskLevel === "Informational").length;
+  const clauses = useMemo(() => result.clauses || [], [result.clauses]);
+  const reviewCount = useMemo(() => clauses.filter((c) => c.riskLevel === "Review").length, [clauses]);
+  const clarifyCount = useMemo(() => clauses.filter((c) => c.riskLevel === "Needs clarification").length, [clauses]);
+  const infoCount = useMemo(() => clauses.filter((c) => c.riskLevel === "Informational").length, [clauses]);
 
-  const filteredClauses = clauses.filter((c) => {
-    // Level filter
-    if (selectedFilter !== "ALL" && c.riskLevel !== selectedFilter) {
-      return false;
-    }
-    // Search query
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const matchTitle = c.title.toLowerCase().includes(q);
-      const matchExp = c.explanation.toLowerCase().includes(q);
-      const matchCat = c.category?.toLowerCase().includes(q);
-      const matchParty = c.parties?.some((p) => p.toLowerCase().includes(q));
-      return matchTitle || matchExp || matchCat || matchParty;
-    }
-    return true;
-  });
+  const filteredClauses = useMemo(() => {
+    return clauses.filter((c) => {
+      // Risk filter
+      if (selectedFilter !== "ALL" && c.riskLevel !== selectedFilter) {
+        return false;
+      }
+      // Search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchTitle = c.title.toLowerCase().includes(q);
+        const matchExp = c.explanation.toLowerCase().includes(q);
+        const matchCat = c.category?.toLowerCase().includes(q);
+        const matchParty = c.parties?.some((p) => p.toLowerCase().includes(q));
+        return matchTitle || matchExp || matchCat || matchParty;
+      }
+      return true;
+    });
+  }, [clauses, selectedFilter, searchQuery]);
 
-  const exportMarkdown = () => {
+  const exportMarkdown = useCallback(() => {
     let md = `# LEXORA LITE Document Analysis Report\n`;
     md += `**Document Type:** ${result.documentType || "Legal Document"}\n`;
     if (documentTitle) md += `**Title:** ${documentTitle}\n`;
@@ -99,9 +103,24 @@ export function AnalysisResults({ result, documentTitle }: AnalysisResultsProps)
     a.download = `Lexora-Analysis-${(documentTitle || "document").replace(/\s+/g, "_")}.md`;
     a.click();
     URL.revokeObjectURL(url);
-  };
+  }, [result, clauses, documentTitle]);
 
-  const handleCopyAll = () => {
+  const exportJSON = useCallback(() => {
+    const jsonStr = JSON.stringify(result, null, 2);
+    const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Lexora-Analysis-${(documentTitle || "document").replace(/\s+/g, "_")}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [result, documentTitle]);
+
+  const handlePrint = useCallback(() => {
+    window.print();
+  }, []);
+
+  const handleCopyAll = useCallback(() => {
     let text = `LEXORA LITE ANALYSIS REPORT\n\n`;
     text += `DOCUMENT TYPE: ${result.documentType}\n`;
     text += `SUMMARY: ${result.summary}\n\n`;
@@ -112,10 +131,10 @@ export function AnalysisResults({ result, documentTitle }: AnalysisResultsProps)
     navigator.clipboard.writeText(text);
     setCopiedAll(true);
     setTimeout(() => setCopiedAll(false), 2000);
-  };
+  }, [result, clauses]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" id="results-section">
       {/* 1. Executive Summary Card */}
       <div className="bg-gradient-to-br from-white via-white to-blue-50/30 rounded-3xl border border-slate-200/90 shadow-sm p-6 sm:p-8 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
@@ -136,21 +155,22 @@ export function AnalysisResults({ result, documentTitle }: AnalysisResultsProps)
           </div>
 
           {/* Export / Copy Toolbar */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap" role="toolbar" aria-label="Report export options">
             <button
               type="button"
               onClick={handleCopyAll}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer"
+              aria-label="Copy full analysis report to clipboard"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               {copiedAll ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="text-emerald-700">Copied Report</span>
+                  <Check className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
+                  <span className="text-emerald-700">Copied</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>Copy Report</span>
+                  <Copy className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>Copy</span>
                 </>
               )}
             </button>
@@ -158,48 +178,70 @@ export function AnalysisResults({ result, documentTitle }: AnalysisResultsProps)
             <button
               type="button"
               onClick={exportMarkdown}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-all cursor-pointer"
+              aria-label="Export analysis report as Markdown file"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>Export .MD</span>
+              <Download className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>.MD</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={exportJSON}
+              aria-label="Export analysis result as raw JSON"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-700 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              <FileCode className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>.JSON</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePrint}
+              aria-label="Print or save as PDF"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-700 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              <Printer className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Print/PDF</span>
             </button>
           </div>
         </div>
 
         {/* Metric Tiles Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-3.5 bg-white border border-slate-200/80 rounded-2xl shadow-2xs">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-              Total Clauses
+          <div className="p-3.5 bg-rose-50/70 border border-rose-200/90 rounded-2xl shadow-2xs">
+            <span className="text-[11px] font-bold text-rose-800 uppercase tracking-wider block flex items-center gap-1">
+              <ShieldAlert className="w-3.5 h-3.5 text-rose-600" aria-hidden="true" />
+              Review Needed
             </span>
-            <div className="text-2xl font-black text-slate-900 mt-0.5">
-              {clauses.length}
+            <div className="text-2xl font-black text-rose-950 mt-0.5">
+              {reviewCount}
             </div>
           </div>
 
           <div className="p-3.5 bg-amber-50/70 border border-amber-200/90 rounded-2xl shadow-2xs">
             <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider block flex items-center gap-1">
-              <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
-              Review Needed
+              <HelpCircle className="w-3.5 h-3.5 text-amber-600" aria-hidden="true" />
+              Clarification
             </span>
             <div className="text-2xl font-black text-amber-950 mt-0.5">
-              {reviewCount}
+              {clarifyCount}
             </div>
           </div>
 
-          <div className="p-3.5 bg-purple-50/70 border border-purple-200/90 rounded-2xl shadow-2xs">
-            <span className="text-[11px] font-bold text-purple-800 uppercase tracking-wider block flex items-center gap-1">
-              <HelpCircle className="w-3.5 h-3.5 text-purple-600" />
-              Clarification
+          <div className="p-3.5 bg-emerald-50/70 border border-emerald-200/90 rounded-2xl shadow-2xs">
+            <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block flex items-center gap-1">
+              <CheckSquare className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
+              Informational
             </span>
-            <div className="text-2xl font-black text-purple-950 mt-0.5">
-              {clarifyCount}
+            <div className="text-2xl font-black text-emerald-950 mt-0.5">
+              {infoCount}
             </div>
           </div>
 
           <div className="p-3.5 bg-blue-50/70 border border-blue-200/90 rounded-2xl shadow-2xs">
             <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider block flex items-center gap-1">
-              <Users className="w-3.5 h-3.5 text-blue-600" />
+              <Users className="w-3.5 h-3.5 text-blue-600" aria-hidden="true" />
               Party Duties
             </span>
             <div className="text-2xl font-black text-blue-950 mt-0.5">
@@ -222,7 +264,7 @@ export function AnalysisResults({ result, documentTitle }: AnalysisResultsProps)
         {result.missingOrUnclearInfo && result.missingOrUnclearInfo.length > 0 && (
           <div className="p-4 bg-amber-50/70 border border-amber-200/90 rounded-2xl space-y-2 text-xs text-amber-950 shadow-2xs">
             <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[11px] text-amber-950">
-              <HelpCircle className="w-4 h-4 text-amber-700" />
+              <HelpCircle className="w-4 h-4 text-amber-700" aria-hidden="true" />
               Missing, Vague, or Unspecified Contract Terms:
             </div>
             <ul className="list-disc list-inside space-y-1 text-slate-800 pl-1">
@@ -237,67 +279,87 @@ export function AnalysisResults({ result, documentTitle }: AnalysisResultsProps)
       </div>
 
       {/* 2. Interactive Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
+      <div
+        className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto"
+        role="tablist"
+        aria-label="Document breakdown sections"
+      >
         <button
           type="button"
+          role="tab"
+          id="tab-clauses"
+          aria-selected={activeTab === "clauses"}
+          aria-controls="panel-clauses"
           onClick={() => setActiveTab("clauses")}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-extrabold rounded-xl transition-all cursor-pointer ${
+          className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-extrabold rounded-xl transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 ${
             activeTab === "clauses"
               ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm"
               : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
           }`}
         >
-          <Layers className="w-4 h-4" />
+          <Layers className="w-4 h-4" aria-hidden="true" />
           <span>Extracted Clauses ({clauses.length})</span>
         </button>
 
         <button
           type="button"
+          role="tab"
+          id="tab-obligations"
+          aria-selected={activeTab === "obligations"}
+          aria-controls="panel-obligations"
           onClick={() => setActiveTab("obligations")}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-extrabold rounded-xl transition-all cursor-pointer ${
+          className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-extrabold rounded-xl transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 ${
             activeTab === "obligations"
               ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm"
               : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
           }`}
         >
-          <Users className="w-4 h-4" />
+          <Users className="w-4 h-4" aria-hidden="true" />
           <span>Party Obligations ({result.obligations?.length || 0})</span>
         </button>
 
         <button
           type="button"
+          role="tab"
+          id="tab-deadlines"
+          aria-selected={activeTab === "deadlines"}
+          aria-controls="panel-deadlines"
           onClick={() => setActiveTab("deadlines")}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-extrabold rounded-xl transition-all cursor-pointer ${
+          className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-extrabold rounded-xl transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 ${
             activeTab === "deadlines"
               ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm"
               : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
           }`}
         >
-          <Clock className="w-4 h-4" />
+          <Clock className="w-4 h-4" aria-hidden="true" />
           <span>Deadlines & Timeframes ({result.deadlines?.length || 0})</span>
         </button>
 
         <button
           type="button"
+          role="tab"
+          id="tab-checklist"
+          aria-selected={activeTab === "checklist"}
+          aria-controls="panel-checklist"
           onClick={() => setActiveTab("checklist")}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-extrabold rounded-xl transition-all cursor-pointer ${
+          className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-extrabold rounded-xl transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 ${
             activeTab === "checklist"
               ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm"
               : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
           }`}
         >
-          <CheckSquare className="w-4 h-4" />
+          <CheckSquare className="w-4 h-4" aria-hidden="true" />
           <span>Review Checklist ({result.reviewChecklist?.length || 0})</span>
         </button>
       </div>
 
       {/* Tab 1: Clauses */}
       {activeTab === "clauses" && (
-        <div className="space-y-4">
+        <div id="panel-clauses" role="tabpanel" aria-labelledby="tab-clauses" className="space-y-4">
           {/* Clause Filter Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
             {/* Filter Pills */}
-            <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-wrap" role="group" aria-label="Filter clauses by risk level">
               <span className="text-xs font-bold text-slate-400 mr-1 hidden sm:inline uppercase tracking-wider">
                 Filter:
               </span>
@@ -310,8 +372,9 @@ export function AnalysisResults({ result, documentTitle }: AnalysisResultsProps)
                 <button
                   key={btn.value}
                   type="button"
+                  aria-pressed={selectedFilter === btn.value}
                   onClick={() => setSelectedFilter(btn.value)}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 ${
                     selectedFilter === btn.value
                       ? "bg-slate-900 text-white shadow-2xs"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -324,12 +387,13 @@ export function AnalysisResults({ result, documentTitle }: AnalysisResultsProps)
 
             {/* Search Input */}
             <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden="true" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search clauses or parties..."
+                aria-label="Search clauses or parties"
                 className="pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-full sm:w-56 text-slate-900 font-medium"
               />
             </div>
@@ -337,7 +401,7 @@ export function AnalysisResults({ result, documentTitle }: AnalysisResultsProps)
 
           {/* Clauses List */}
           {filteredClauses.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-4" aria-live="polite">
               {filteredClauses.map((clause, idx) => (
                 <ClauseCard key={idx} clause={clause} index={idx} />
               ))}
@@ -352,17 +416,23 @@ export function AnalysisResults({ result, documentTitle }: AnalysisResultsProps)
 
       {/* Tab 2: Party Obligations */}
       {activeTab === "obligations" && (
-        <ObligationsPanel obligations={result.obligations} />
+        <div id="panel-obligations" role="tabpanel" aria-labelledby="tab-obligations">
+          <ObligationsPanel obligations={result.obligations} />
+        </div>
       )}
 
       {/* Tab 3: Deadlines & Milestones */}
       {activeTab === "deadlines" && (
-        <DeadlinesPanel deadlines={result.deadlines} />
+        <div id="panel-deadlines" role="tabpanel" aria-labelledby="tab-deadlines">
+          <DeadlinesPanel deadlines={result.deadlines} />
+        </div>
       )}
 
       {/* Tab 4: Review Checklist */}
       {activeTab === "checklist" && (
-        <ReviewChecklist items={result.reviewChecklist} />
+        <div id="panel-checklist" role="tabpanel" aria-labelledby="tab-checklist">
+          <ReviewChecklist items={result.reviewChecklist} />
+        </div>
       )}
 
       {/* Educational Notice Banner */}

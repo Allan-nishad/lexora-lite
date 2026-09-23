@@ -44,11 +44,16 @@ export function verifyEvidence(
   const rawSource = (sourceDocumentText || "").trim();
 
   // 1. Missing or placeholder evidence
+  const lowerEv = rawEvidence.toLowerCase();
   if (
     !rawEvidence ||
     rawEvidence === "No explicit clause text quoted." ||
     rawEvidence === "No direct quote available." ||
     rawEvidence === "Evidence unavailable" ||
+    lowerEv === "n/a" ||
+    lowerEv === "none" ||
+    lowerEv.startsWith("not specified") ||
+    lowerEv.startsWith("not mentioned") ||
     rawEvidence.length < 3
   ) {
     return {

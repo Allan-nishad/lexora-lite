@@ -3,10 +3,30 @@ import { analyzeRequestSchema, analysisResultSchema } from "@/lib/validation/sch
 import { SYSTEM_INSTRUCTION_ANALYSIS, buildAnalysisPrompt } from "@/lib/ai/prompts";
 import { callGeminiJSON } from "@/lib/ai/gemini";
 import { verifyEvidence } from "@/lib/validation/evidence";
+import { sanitizeInputText, detectPromptInjection } from "@/lib/security/sanitizer";
+import { globalRateLimiter } from "@/lib/security/rate-limiter";
+import { analysisCache } from "@/lib/cache/lru-cache";
+import { AnalysisResult } from "@/types/analysis";
 import { ZodError } from "zod";
 
 export async function POST(req: NextRequest) {
   try {
+    // 1. Rate Limiting Protection
+    const clientIp =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("x-real-ip") ||
+      "anonymous_client";
+
+    const rateCheck = globalRateLimiter.check(clientIp);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: "Rate limit exceeded. Please wait a few seconds before analyzing another document.",
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json().catch(() => null);
     if (!body) {
       return NextResponse.json(
@@ -15,7 +35,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1. Validate incoming request
+    // 2. Validate incoming request structure
     const validationResult = analyzeRequestSchema.safeParse(body);
     if (!validationResult.success) {
       const errorMsg = validationResult.error.issues
@@ -24,16 +44,42 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 
-    const { documentText, documentTitle } = validationResult.data;
+    const rawDocText = validationResult.data.documentText;
+    const rawDocTitle = validationResult.data.documentTitle;
 
-    // 2. Build structured prompt and call Google Gemini
+    // 3. Security Sanitization & Injection Detection
+    const documentText = sanitizeInputText(rawDocText);
+    const documentTitle = rawDocTitle ? sanitizeInputText(rawDocTitle) : undefined;
+
+    const injectionCheck = detectPromptInjection(documentText);
+    if (injectionCheck.isSuspicious) {
+      return NextResponse.json(
+        {
+          error: "Document submission rejected: Potential prompt injection or jailbreak patterns detected.",
+        },
+        { status: 422 }
+      );
+    }
+
+    // 4. Check LRU Cache for Instant Response
+    const cacheKey = analysisCache.hashKey("analysis", `${documentTitle || ""}_${documentText}`);
+    const cachedResult = analysisCache.get(cacheKey) as AnalysisResult | null;
+    if (cachedResult) {
+      return NextResponse.json({
+        success: true,
+        data: cachedResult,
+        cached: true,
+      });
+    }
+
+    // 5. Build prompt and invoke Google Gemini
     const prompt = buildAnalysisPrompt(documentText, documentTitle);
     const rawAiResult = await callGeminiJSON<unknown>(
       SYSTEM_INSTRUCTION_ANALYSIS,
       prompt
     );
 
-    // 3. Validate structured AI response with Zod
+    // 6. Validate AI output against strict Zod schema
     const parsedResult = analysisResultSchema.safeParse(rawAiResult);
     if (!parsedResult.success) {
       console.error(
@@ -51,13 +97,11 @@ export async function POST(req: NextRequest) {
 
     const data = parsedResult.data;
 
-    // 4. Deterministic Evidence Verification Layer
-    // Verify each clause against the raw source document
+    // 7. Deterministic Evidence Verification Layer
     const verifiedClauses = data.clauses.map((clause) => {
       const verification = verifyEvidence(clause.evidence, documentText);
       let riskLevel = clause.riskLevel;
 
-      // If evidence cannot be verified or is missing, ensure item is marked for review
       if (verification.status === "unverified" || verification.status === "missing") {
         if (riskLevel === "Informational") {
           riskLevel = "Review";
@@ -73,7 +117,6 @@ export async function POST(req: NextRequest) {
       };
     });
 
-    // Verify obligations
     const verifiedObligations = data.obligations.map((obligation) => {
       const verification = verifyEvidence(obligation.evidence, documentText);
       return {
@@ -84,7 +127,6 @@ export async function POST(req: NextRequest) {
       };
     });
 
-    // Verify deadlines
     const verifiedDeadlines = data.deadlines.map((deadline) => {
       const verification = verifyEvidence(deadline.evidence, documentText);
       return {
@@ -95,15 +137,19 @@ export async function POST(req: NextRequest) {
       };
     });
 
-    // 5. Return deterministically verified payload
+    const finalResult: AnalysisResult = {
+      ...data,
+      clauses: verifiedClauses,
+      obligations: verifiedObligations,
+      deadlines: verifiedDeadlines,
+    };
+
+    // Save in LRU cache
+    analysisCache.set(cacheKey, finalResult);
+
     return NextResponse.json({
       success: true,
-      data: {
-        ...data,
-        clauses: verifiedClauses,
-        obligations: verifiedObligations,
-        deadlines: verifiedDeadlines,
-      },
+      data: finalResult,
     });
   } catch (err: unknown) {
     const error = err as Error;
@@ -120,18 +166,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "Google Gemini API key is not configured on the server. Please provide a valid GEMINI_API_KEY in .env.local.",
+            "Gemini API key is not configured. Please add GEMINI_API_KEY to your environment variables.",
         },
-        { status: 503 }
+        { status: 500 }
       );
     }
 
     return NextResponse.json(
-      {
-        error:
-          error.message ||
-          "An unexpected error occurred while analyzing the document.",
-      },
+      { error: "Internal analysis error: " + error.message },
       { status: 500 }
     );
   }
